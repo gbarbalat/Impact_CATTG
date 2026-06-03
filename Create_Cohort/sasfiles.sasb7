@@ -1,0 +1,22 @@
+data work.temp_cohort_aged;
+    /* Read the giant prescription table */
+    set oravue.ER_PRS_F (keep=BEN_NIR_PSA BEN_RNG_GEM BEN_NAI_ANN 
+                             FLX_DIS_DTD FLX_TRT_DTD FLX_EMT_TYP FLX_EMT_NUM 
+                             FLX_EMT_ORD ORG_CLE_NUM DCT_ORD_NUM PRS_ORD_NUM REM_TYP_AFF);
+    
+    /* Cross-reference against our small cohort index */
+    set work.temp_cohort key=patient_idx / unique;
+    
+    /* If a match is found (_IORC_ = 0), evaluate the age criteria */
+    if _iorc_ = 0 then do;
+        if BEN_NAI_ANN ne "" then do;
+            Age = year(IMB_ALD_DTD) - input(BEN_NAI_ANN, 4.);
+            if Age > 50 then output;
+        end;
+    end;
+    else do;
+        /* Clear the error flag raised by a non-match lookup */
+        _error_ = 0;
+    end;
+run;
+
